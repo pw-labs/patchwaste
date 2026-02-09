@@ -1,0 +1,12 @@
+/target
+**/*.rs.bk
+.DS_Store
+.worktrees/
+patchwaste-out/
+patchwaste-out-test/
+*.log
+!fixtures/**/*.log
+*.tmp
+AGENTS.md
+.claude/
+docs/

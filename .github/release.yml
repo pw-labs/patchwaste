@@ -1,0 +1,28 @@
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+      - triage
+      - commercial
+    authors:
+      - dependabot
+  categories:
+    - title: Open Core CLI
+      labels:
+        - open-core
+        - cli
+        - parser
+    - title: Documentation And Onboarding
+      labels:
+        - docs
+        - tutorial
+    - title: CI And Tooling
+      labels:
+        - ci
+        - tooling
+    - title: Fixes
+      labels:
+        - bug
+    - title: Other Changes
+      labels:
+        - "*"

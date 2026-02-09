@@ -1,0 +1,31 @@
+name: Open-core feature request
+about: Request a feature for local CLI/parser/reporting workflows
+title: "feat(open-core): "
+labels: ["enhancement", "open-core"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Open core scope is local-first CLI analysis. For hosted/team features,
+        use the "Commercial interest" template.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What local workflow is blocked today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What should the CLI/parser/report output do?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried.
+    validations:
+      required: false

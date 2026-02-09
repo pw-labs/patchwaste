@@ -1,0 +1,41 @@
+name: Bug report
+about: Report incorrect behavior in open-core CLI/parser/reporting
+title: "bug: "
+labels: ["bug", "open-core"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened and why it is a problem.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version / commit
+      placeholder: "e.g. v0.1.0 or git sha"
+    validations:
+      required: true
+  - type: textarea
+    id: command
+    attributes:
+      label: Command used
+      description: Paste the exact command.
+      render: bash
+    validations:
+      required: true
+  - type: textarea
+    id: input_context
+    attributes:
+      label: Input context
+      description: Describe/sanitize the BuildOutput input shape.
+    validations:
+      required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: Expected vs actual
+      description: Include relevant stderr/log snippets.
+    validations:
+      required: true

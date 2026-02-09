@@ -1,0 +1,32 @@
+name: Commercial interest
+about: Signal demand for hosted/team/enterprise capabilities
+title: "commercial: "
+labels: ["commercial", "triage"]
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Team use case
+      description: What team workflow needs shared/hosted support?
+    validations:
+      required: true
+  - type: checkboxes
+    id: capabilities
+    attributes:
+      label: Needed capabilities
+      options:
+        - label: Hosted dashboard/history
+        - label: Org policy management
+        - label: PR annotations/GitHub App
+        - label: SSO / audit controls
+        - label: SLA / onboarding support
+  - type: input
+    id: team_size
+    attributes:
+      label: Approx team size
+      placeholder: "e.g. 8 engineers across 2 games"
+  - type: textarea
+    id: timeline
+    attributes:
+      label: Desired timeline
+      description: When would you need this live?

@@ -1,0 +1,57 @@
+---
+source: crates/core/tests/analyze_fixture.rs
+assertion_line: 25
+expression: report
+---
+{
+  "report_version": "0.1.0",
+  "inputs": {
+    "input_path": "../../fixtures/synthetic_case_01/BuildOutput",
+    "parse_mode": "BEST_EFFORT",
+    "sources": [
+      "../../fixtures/synthetic_case_01/BuildOutput/steampipe_preview.log"
+    ]
+  },
+  "metrics": {
+    "new_bytes": 12345678,
+    "changed_content_bytes": 2000000,
+    "delta_efficiency": 0.1620000132840011,
+    "waste_ratio": 0.8379999867159988
+  },
+  "confidence": {
+    "new_bytes": "HIGH",
+    "changed_content_bytes": "HIGH",
+    "delta_efficiency": "MEDIUM",
+    "waste_ratio": "MEDIUM",
+    "overall": "HIGH"
+  },
+  "findings": [
+    {
+      "id": "HIGH_WASTE_RATIO",
+      "severity": "HIGH",
+      "evidence": [
+        "waste_ratio=0.838"
+      ],
+      "likely_cause": "Large packed file churn or content reorder causing many new chunks",
+      "suggested_actions": [
+        "Avoid reordering assets inside large packed files between builds",
+        "Split packs by level/realm to localize churn",
+        "Align pack layout to stable boundaries (e.g., 1MB) where applicable"
+      ]
+    },
+    {
+      "id": "LARGE_TOP_OFFENDER",
+      "severity": "MEDIUM",
+      "evidence": [
+        "GameContent.pak (800000000 bytes)"
+      ],
+      "likely_cause": "A large file dominates predicted update size",
+      "suggested_actions": [
+        "If this is a pack file, consider splitting into multiple packs",
+        "Ensure build process does not rewrite the whole file for small changes"
+      ]
+    }
+  ],
+  "baseline_comparison": null,
+  "budget": null
+}

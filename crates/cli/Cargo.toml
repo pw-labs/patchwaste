@@ -1,0 +1,16 @@
+[package]
+name = "patchwaste"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+serde_json = "1"
+patchwaste-core = { path = "../core" }
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+serial_test = "3"
