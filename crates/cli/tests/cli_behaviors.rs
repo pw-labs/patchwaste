@@ -58,6 +58,42 @@ fn cli_analyze_exits_2_when_budget_fails() {
 }
 
 #[test]
+fn cli_analyze_writes_junit_xml_when_requested() {
+    let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/synthetic_case_01/BuildOutput");
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let out_dir = format!("patchwaste-out-junit-{nonce}");
+
+    let mut cmd = cargo_bin_cmd!("patchwaste");
+    cmd.args([
+        "analyze",
+        "--input",
+        fixture_path.to_str().unwrap(),
+        "--output-format",
+        "all",
+        "--out",
+        &out_dir,
+    ]);
+
+    cmd.assert().success();
+
+    let out_path = std::path::Path::new(&out_dir);
+    assert!(out_path.join("report.json").exists());
+    assert!(out_path.join("report.md").exists());
+    assert!(out_path.join("report.xml").exists());
+
+    let xml = fs::read_to_string(out_path.join("report.xml")).unwrap();
+    assert!(xml.contains("<testsuite"));
+    assert!(xml.contains("HIGH_WASTE_RATIO"));
+    assert!(xml.contains("budget_gate"));
+
+    let _ = fs::remove_dir_all(&out_dir);
+}
+
+#[test]
 fn cli_analyze_errors_on_missing_input() {
     let mut cmd = cargo_bin_cmd!("patchwaste");
     cmd.args([

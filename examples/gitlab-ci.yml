@@ -1,0 +1,24 @@
+# Example GitLab CI job for patchwaste
+#
+# Add this to your .gitlab-ci.yml to gate merges on patch efficiency.
+# Adjust the image, stage, and paths to match your project.
+
+patchwaste:
+  stage: test
+  image: rust:latest
+  before_script:
+    - cargo install patchwaste --locked
+  script:
+    - patchwaste analyze
+        --input "$CI_PROJECT_DIR/BuildOutput"
+        --sha "$CI_COMMIT_SHA"
+        --branch "$CI_COMMIT_BRANCH"
+        --build-id "$CI_PIPELINE_ID"
+        --output-format all
+        --out patchwaste-out
+  artifacts:
+    when: always
+    paths:
+      - patchwaste-out/
+    reports:
+      junit: patchwaste-out/report.xml

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     baseline::Baseline,
     parser::ParseMode,
-    types::{ConfidenceLevel, Finding, Metrics},
+    types::{ConfidenceLevel, Finding, Metrics, Severity},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,6 +17,10 @@ pub struct Report {
     pub findings: Vec<Finding>,
     pub baseline_comparison: Option<BaselineComparison>,
     pub budget: Option<BudgetResult>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build_metadata: Option<BuildMetadata>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub per_depot: Vec<DepotReport>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,7 +53,31 @@ pub struct BudgetResult {
     pub reason: String,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BuildMetadata {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sha: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub branch: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DepotReport {
+    pub depot_id: String,
+    pub metrics: Metrics,
+    pub confidence: ConfidenceLevel,
+}
+
+impl BuildMetadata {
+    pub fn is_empty(&self) -> bool {
+        self.sha.is_none() && self.branch.is_none() && self.build_id.is_none()
+    }
+}
+
 impl Report {
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         input: &Path,
         mode: ParseMode,
@@ -58,9 +86,11 @@ impl Report {
         findings: Vec<Finding>,
         baseline_comparison: Option<BaselineComparison>,
         budget: Option<BudgetResult>,
+        build_metadata: Option<BuildMetadata>,
     ) -> Self {
+        let build_metadata = build_metadata.filter(|m| !m.is_empty());
         Self {
-            report_version: "0.1.0".to_string(),
+            report_version: "1.0.0".to_string(),
             inputs: Inputs {
                 input_path: input.display().to_string(),
                 parse_mode: match mode {
@@ -74,6 +104,8 @@ impl Report {
             findings,
             baseline_comparison,
             budget,
+            build_metadata,
+            per_depot: Vec::new(),
         }
     }
 
@@ -126,6 +158,35 @@ impl Report {
             s.push('\n');
         }
 
+        if !self.per_depot.is_empty() {
+            s.push_str("## Per-depot metrics\n\n");
+            for d in &self.per_depot {
+                s.push_str(&format!("### Depot {}\n", d.depot_id));
+                s.push_str(&format!("- new_bytes: `{}`\n", d.metrics.new_bytes));
+                s.push_str(&format!(
+                    "- changed_content_bytes: `{}`\n",
+                    d.metrics.changed_content_bytes
+                ));
+                s.push_str(&format!("- waste_ratio: `{:.3}`\n", d.metrics.waste_ratio));
+                s.push_str(&format!("- confidence: `{:?}`\n", d.confidence));
+                s.push('\n');
+            }
+        }
+
+        if let Some(meta) = &self.build_metadata {
+            s.push_str("## Build metadata\n\n");
+            if let Some(sha) = &meta.sha {
+                s.push_str(&format!("- sha: `{}`\n", sha));
+            }
+            if let Some(branch) = &meta.branch {
+                s.push_str(&format!("- branch: `{}`\n", branch));
+            }
+            if let Some(build_id) = &meta.build_id {
+                s.push_str(&format!("- build_id: `{}`\n", build_id));
+            }
+            s.push('\n');
+        }
+
         s.push_str("## Findings\n\n");
         if self.findings.is_empty() {
             s.push_str("- (none)\n");
@@ -152,6 +213,77 @@ impl Report {
 
         s
     }
+
+    pub fn to_junit_xml(&self) -> String {
+        let mut x = String::new();
+        x.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+
+        let total = self.findings.len() + 1; // +1 for budget gate testcase
+        let failures: usize = self
+            .findings
+            .iter()
+            .filter(|f| f.severity == Severity::High)
+            .count()
+            + if self.budget.as_ref().is_some_and(|b| !b.pass) {
+                1
+            } else {
+                0
+            };
+
+        x.push_str(&format!(
+            "<testsuite name=\"patchwaste\" tests=\"{}\" failures=\"{}\">\n",
+            total, failures
+        ));
+
+        for f in &self.findings {
+            x.push_str(&format!(
+                "  <testcase name=\"{}\" classname=\"patchwaste.findings\"",
+                xml_escape(&f.id)
+            ));
+            if f.severity == Severity::High {
+                x.push_str(">\n");
+                x.push_str(&format!(
+                    "    <failure message=\"{}\">{}</failure>\n",
+                    xml_escape(&f.likely_cause),
+                    xml_escape(&f.evidence.join("; "))
+                ));
+                x.push_str("  </testcase>\n");
+            } else {
+                x.push_str(" />\n");
+            }
+        }
+
+        // Budget gate testcase
+        x.push_str("  <testcase name=\"budget_gate\" classname=\"patchwaste.budget\"");
+        match &self.budget {
+            Some(b) if !b.pass => {
+                x.push_str(">\n");
+                x.push_str(&format!(
+                    "    <failure message=\"{}\">{}</failure>\n",
+                    xml_escape(&b.reason),
+                    xml_escape(&format!(
+                        "regression_ratio exceeded threshold {}",
+                        b.threshold_regression_ratio
+                    ))
+                ));
+                x.push_str("  </testcase>\n");
+            }
+            _ => {
+                x.push_str(" />\n");
+            }
+        }
+
+        x.push_str("</testsuite>\n");
+        x
+    }
+}
+
+fn xml_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
 
 pub fn compare_to_baseline(b: &Baseline, metrics: &Metrics) -> BaselineComparison {
@@ -181,7 +313,7 @@ mod tests {
     #[test]
     fn markdown_includes_sections_and_findings() {
         let report = Report {
-            report_version: "0.1.0".to_string(),
+            report_version: "1.0.0".to_string(),
             inputs: Inputs {
                 input_path: "x".to_string(),
                 parse_mode: "STRICT".to_string(),
@@ -217,6 +349,8 @@ mod tests {
                 pass: false,
                 reason: "nope".to_string(),
             }),
+            build_metadata: None,
+            per_depot: Vec::new(),
         };
 
         let md = report.to_markdown();
@@ -224,6 +358,140 @@ mod tests {
         assert!(md.contains("## Baseline comparison"));
         assert!(md.contains("## Budget gate"));
         assert!(md.contains("### X"));
+    }
+
+    #[test]
+    fn build_metadata_appears_in_markdown_when_present() {
+        let report = Report::new(
+            Path::new("x"),
+            ParseMode::BestEffort,
+            Metrics {
+                new_bytes: 10,
+                changed_content_bytes: 5,
+                delta_efficiency: 0.5,
+                waste_ratio: 0.5,
+            },
+            ConfidenceSummary {
+                new_bytes: ConfidenceLevel::Low,
+                changed_content_bytes: ConfidenceLevel::Low,
+                delta_efficiency: ConfidenceLevel::Medium,
+                waste_ratio: ConfidenceLevel::Medium,
+                overall: ConfidenceLevel::Low,
+            },
+            vec![],
+            None,
+            None,
+            Some(BuildMetadata {
+                sha: Some("abc123".to_string()),
+                branch: Some("main".to_string()),
+                build_id: Some("42".to_string()),
+            }),
+        );
+
+        let md = report.to_markdown();
+        assert!(md.contains("## Build metadata"));
+        assert!(md.contains("abc123"));
+        assert!(md.contains("main"));
+        assert!(md.contains("42"));
+
+        let json = serde_json::to_string(&report).unwrap();
+        assert!(json.contains("build_metadata"));
+        assert!(json.contains("abc123"));
+    }
+
+    #[test]
+    fn build_metadata_omitted_when_all_none() {
+        let report = Report::new(
+            Path::new("x"),
+            ParseMode::BestEffort,
+            Metrics {
+                new_bytes: 10,
+                changed_content_bytes: 5,
+                delta_efficiency: 0.5,
+                waste_ratio: 0.5,
+            },
+            ConfidenceSummary {
+                new_bytes: ConfidenceLevel::Low,
+                changed_content_bytes: ConfidenceLevel::Low,
+                delta_efficiency: ConfidenceLevel::Medium,
+                waste_ratio: ConfidenceLevel::Medium,
+                overall: ConfidenceLevel::Low,
+            },
+            vec![],
+            None,
+            None,
+            Some(BuildMetadata {
+                sha: None,
+                branch: None,
+                build_id: None,
+            }),
+        );
+
+        let json = serde_json::to_string(&report).unwrap();
+        assert!(!json.contains("build_metadata"));
+    }
+
+    #[test]
+    fn junit_xml_contains_findings_and_budget_gate() {
+        let report = Report {
+            report_version: "1.0.0".to_string(),
+            inputs: Inputs {
+                input_path: "x".to_string(),
+                parse_mode: "BEST_EFFORT".to_string(),
+                sources: vec![],
+            },
+            metrics: Metrics {
+                new_bytes: 10,
+                changed_content_bytes: 5,
+                delta_efficiency: 0.5,
+                waste_ratio: 0.5,
+            },
+            confidence: ConfidenceSummary {
+                new_bytes: ConfidenceLevel::High,
+                changed_content_bytes: ConfidenceLevel::High,
+                delta_efficiency: ConfidenceLevel::Medium,
+                waste_ratio: ConfidenceLevel::Medium,
+                overall: ConfidenceLevel::High,
+            },
+            findings: vec![
+                Finding {
+                    id: "HIGH_WASTE_RATIO".to_string(),
+                    severity: Severity::High,
+                    evidence: vec!["waste_ratio=0.500".to_string()],
+                    likely_cause: "churn".to_string(),
+                    suggested_actions: vec![],
+                },
+                Finding {
+                    id: "LOW_SEV".to_string(),
+                    severity: Severity::Low,
+                    evidence: vec![],
+                    likely_cause: "minor".to_string(),
+                    suggested_actions: vec![],
+                },
+            ],
+            baseline_comparison: None,
+            budget: Some(BudgetResult {
+                threshold_regression_ratio: 1.0,
+                pass: false,
+                reason: "exceeded".to_string(),
+            }),
+            build_metadata: None,
+            per_depot: Vec::new(),
+        };
+
+        let xml = report.to_junit_xml();
+        assert!(xml.contains("<?xml version=\"1.0\""));
+        assert!(xml.contains("tests=\"3\""));
+        assert!(xml.contains("failures=\"2\"")); // HIGH finding + failed budget
+        assert!(xml.contains("HIGH_WASTE_RATIO"));
+        assert!(xml.contains("<failure"));
+        assert!(xml.contains("LOW_SEV"));
+        assert!(xml.contains("budget_gate"));
+    }
+
+    #[test]
+    fn xml_escape_handles_special_chars() {
+        assert_eq!(xml_escape("<test>&\"'"), "&lt;test&gt;&amp;&quot;&apos;");
     }
 
     #[test]

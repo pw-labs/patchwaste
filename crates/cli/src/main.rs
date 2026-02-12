@@ -3,7 +3,8 @@ use std::path::{Path, PathBuf};
 use anyhow::Context;
 use clap::{Parser, Subcommand};
 
-use patchwaste_core::report::Report;
+use patchwaste_core::config::Config;
+use patchwaste_core::report::{BuildMetadata, Report};
 use patchwaste_core::types::Severity;
 use patchwaste_core::{analyze_dir, AnalyzeOptions};
 
@@ -35,7 +36,29 @@ enum Commands {
 
         #[arg(long, default_value = "patchwaste-out")]
         out: PathBuf,
+
+        #[arg(long)]
+        sha: Option<String>,
+
+        #[arg(long)]
+        branch: Option<String>,
+
+        #[arg(long)]
+        build_id: Option<String>,
+
+        #[arg(long)]
+        config: Option<PathBuf>,
+
+        #[arg(long, default_value = "json")]
+        output_format: OutputFormat,
     },
+}
+
+#[derive(Debug, Clone, clap::ValueEnum)]
+enum OutputFormat {
+    Json,
+    Junit,
+    All,
 }
 
 struct Style {
@@ -86,7 +109,26 @@ fn main() -> std::process::ExitCode {
             budget_ratio,
             strict,
             out,
-        } => run_analyze(&input, baseline.as_deref(), budget_ratio, strict, &out),
+            sha,
+            branch,
+            build_id,
+            config,
+            output_format,
+        } => {
+            let cfg = load_config(config.as_deref());
+            let budget_ratio = budget_ratio.or(cfg.budget_ratio);
+            let strict = strict || cfg.strict.unwrap_or(false);
+            let build_metadata = resolve_build_metadata(sha, branch, build_id);
+            run_analyze(
+                &input,
+                baseline.as_deref(),
+                budget_ratio,
+                strict,
+                &out,
+                build_metadata,
+                &output_format,
+            )
+        }
     };
 
     match res {
@@ -213,12 +255,58 @@ fn print_report(report: &Report, out: &Path) {
     eprintln!();
 }
 
+fn load_config(path: Option<&Path>) -> Config {
+    match path {
+        Some(p) => Config::load(p).unwrap_or_else(|e| {
+            eprintln!(
+                "{}{}warning:{} failed to load config {}: {}",
+                style().bold,
+                style().yellow,
+                style().reset,
+                p.display(),
+                e
+            );
+            Config::default()
+        }),
+        None => Config::discover().unwrap_or_default(),
+    }
+}
+
+fn resolve_build_metadata(
+    sha: Option<String>,
+    branch: Option<String>,
+    build_id: Option<String>,
+) -> Option<BuildMetadata> {
+    let sha = sha.or_else(|| {
+        std::env::var("GITHUB_SHA")
+            .ok()
+            .or_else(|| std::env::var("CI_COMMIT_SHA").ok())
+    });
+    let branch = branch.or_else(|| {
+        std::env::var("GITHUB_REF_NAME")
+            .ok()
+            .or_else(|| std::env::var("CI_COMMIT_BRANCH").ok())
+    });
+    let build_id = build_id.or_else(|| {
+        std::env::var("BUILD_ID")
+            .ok()
+            .or_else(|| std::env::var("CI_PIPELINE_ID").ok())
+    });
+    Some(BuildMetadata {
+        sha,
+        branch,
+        build_id,
+    })
+}
+
 fn run_analyze(
     input: &Path,
     baseline: Option<&Path>,
     budget_ratio: Option<f64>,
     strict: bool,
     out: &Path,
+    build_metadata: Option<BuildMetadata>,
+    output_format: &OutputFormat,
 ) -> anyhow::Result<std::process::ExitCode> {
     let s = style();
 
@@ -228,6 +316,7 @@ fn run_analyze(
         strict,
         budget_ratio,
         baseline_path: baseline.map(|p| p.to_path_buf()),
+        build_metadata,
         ..AnalyzeOptions::default()
     };
 
@@ -236,14 +325,26 @@ fn run_analyze(
 
     std::fs::create_dir_all(out).with_context(|| format!("create out dir {}", out.display()))?;
 
-    let json_path = out.join("report.json");
-    let md_path = out.join("report.md");
+    let write_json_md = matches!(output_format, OutputFormat::Json | OutputFormat::All);
+    let write_junit = matches!(output_format, OutputFormat::Junit | OutputFormat::All);
 
-    let json = serde_json::to_vec_pretty(&report).context("serialize report json")?;
-    std::fs::write(&json_path, json).with_context(|| format!("write {}", json_path.display()))?;
+    if write_json_md {
+        let json_path = out.join("report.json");
+        let md_path = out.join("report.md");
 
-    let md = report.to_markdown();
-    std::fs::write(&md_path, md).with_context(|| format!("write {}", md_path.display()))?;
+        let json = serde_json::to_vec_pretty(&report).context("serialize report json")?;
+        std::fs::write(&json_path, json)
+            .with_context(|| format!("write {}", json_path.display()))?;
+
+        let md = report.to_markdown();
+        std::fs::write(&md_path, md).with_context(|| format!("write {}", md_path.display()))?;
+    }
+
+    if write_junit {
+        let xml_path = out.join("report.xml");
+        let xml = report.to_junit_xml();
+        std::fs::write(&xml_path, xml).with_context(|| format!("write {}", xml_path.display()))?;
+    }
 
     // Machine-parseable line on stdout
     println!(
@@ -320,5 +421,29 @@ mod tests {
         assert_eq!(style().bold, "");
         std::env::remove_var("NO_COLOR");
         assert_ne!(style().bold, "");
+    }
+
+    #[test]
+    #[serial]
+    fn resolve_build_metadata_prefers_cli_args() {
+        std::env::set_var("GITHUB_SHA", "env-sha");
+        let meta = resolve_build_metadata(Some("cli-sha".to_string()), None, None).unwrap();
+        assert_eq!(meta.sha.as_deref(), Some("cli-sha"));
+        std::env::remove_var("GITHUB_SHA");
+    }
+
+    #[test]
+    #[serial]
+    fn resolve_build_metadata_falls_back_to_env() {
+        std::env::set_var("GITHUB_SHA", "env-sha");
+        std::env::set_var("GITHUB_REF_NAME", "env-branch");
+        std::env::set_var("BUILD_ID", "env-build");
+        let meta = resolve_build_metadata(None, None, None).unwrap();
+        assert_eq!(meta.sha.as_deref(), Some("env-sha"));
+        assert_eq!(meta.branch.as_deref(), Some("env-branch"));
+        assert_eq!(meta.build_id.as_deref(), Some("env-build"));
+        std::env::remove_var("GITHUB_SHA");
+        std::env::remove_var("GITHUB_REF_NAME");
+        std::env::remove_var("BUILD_ID");
     }
 }

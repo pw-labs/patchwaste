@@ -4,7 +4,7 @@ assertion_line: 25
 expression: report
 ---
 {
-  "report_version": "0.1.0",
+  "report_version": "1.0.0",
   "inputs": {
     "input_path": "../../fixtures/synthetic_case_01/BuildOutput",
     "parse_mode": "BEST_EFFORT",

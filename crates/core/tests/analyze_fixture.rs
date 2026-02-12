@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{
     fs,
     time::{SystemTime, UNIX_EPOCH},
@@ -80,4 +80,46 @@ fn automation_dummy_fixture_is_parseable() {
 
     assert_eq!(report.metrics.new_bytes, 4_194_304);
     assert_eq!(report.metrics.changed_content_bytes, 1_048_576);
+}
+
+#[test]
+fn multi_depot_fixture_produces_per_depot_metrics() {
+    let input = Path::new("../../fixtures/multi_depot/BuildOutput");
+    let report = analyze_dir(input, AnalyzeOptions::default()).expect("analyze multi_depot");
+
+    assert_eq!(report.per_depot.len(), 2);
+
+    let d12345 = report
+        .per_depot
+        .iter()
+        .find(|d| d.depot_id == "12345")
+        .expect("depot 12345 present");
+    assert_eq!(d12345.metrics.new_bytes, 5_000_000);
+    assert_eq!(d12345.metrics.changed_content_bytes, 3_000_000);
+
+    let d67890 = report
+        .per_depot
+        .iter()
+        .find(|d| d.depot_id == "67890")
+        .expect("depot 67890 present");
+    assert_eq!(d67890.metrics.new_bytes, 8_000_000);
+    assert_eq!(d67890.metrics.changed_content_bytes, 1_000_000);
+
+    // aggregate uses merge (overwrite) semantics across log files
+    assert!(report.metrics.new_bytes > 0);
+}
+
+#[test]
+fn extract_depot_id_from_filename() {
+    use patchwaste_core::parser::extract_depot_id;
+
+    assert_eq!(
+        extract_depot_id(&PathBuf::from("steampipe_preview_12345.log")),
+        Some("12345".to_string())
+    );
+    assert_eq!(extract_depot_id(&PathBuf::from("plain.log")), None);
+    assert_eq!(
+        extract_depot_id(&PathBuf::from("/some/99999/plain.log")),
+        Some("99999".to_string())
+    );
 }

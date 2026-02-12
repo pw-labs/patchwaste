@@ -38,3 +38,9 @@ pub enum Severity {
     Medium,
     High,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DepotMetrics {
+    pub depot_id: String,
+    pub metrics: Metrics,
+}

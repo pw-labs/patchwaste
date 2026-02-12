@@ -1,4 +1,5 @@
 pub mod baseline;
+pub mod config;
 pub mod parser;
 pub mod report;
 pub mod rules;
@@ -11,7 +12,7 @@ use anyhow::Context;
 use crate::{
     baseline::Baseline,
     parser::ParseMode,
-    report::{BudgetResult, Report},
+    report::{BudgetResult, DepotReport, Report},
     rules::run_rules,
     types::{ConfidenceLevel, Metrics},
 };
@@ -22,6 +23,7 @@ pub struct AnalyzeOptions {
     pub baseline_path: Option<std::path::PathBuf>,
     pub budget_ratio: Option<f64>,
     pub max_total_bytes_scanned: u64,
+    pub build_metadata: Option<report::BuildMetadata>,
 }
 
 impl Default for AnalyzeOptions {
@@ -31,6 +33,7 @@ impl Default for AnalyzeOptions {
             baseline_path: None,
             budget_ratio: None,
             max_total_bytes_scanned: 50 * 1024 * 1024,
+            build_metadata: None,
         }
     }
 }
@@ -85,6 +88,26 @@ pub fn analyze_dir(input: &Path, opts: AnalyzeOptions) -> anyhow::Result<Report>
         _ => None,
     };
 
+    let per_depot: Vec<DepotReport> = parsed
+        .per_depot
+        .iter()
+        .map(|d| {
+            let depot_parsed = parser::ParsedBuildOutput {
+                mode: parse_mode,
+                counters: d.counters.clone(),
+                offenders: d.offenders.clone(),
+                sources: vec![],
+                per_depot: vec![],
+            };
+            let (depot_metrics, depot_confidence) = compute_metrics(&depot_parsed);
+            DepotReport {
+                depot_id: d.depot_id.clone(),
+                metrics: depot_metrics,
+                confidence: depot_confidence.overall,
+            }
+        })
+        .collect();
+
     let mut report = Report::new(
         input,
         parse_mode,
@@ -93,13 +116,15 @@ pub fn analyze_dir(input: &Path, opts: AnalyzeOptions) -> anyhow::Result<Report>
         findings,
         baseline_comparison,
         budget,
+        opts.build_metadata,
     );
     report.inputs.sources = parsed.sources;
+    report.per_depot = per_depot;
 
     Ok(report)
 }
 
-fn compute_metrics(parsed: &parser::ParsedBuildOutput) -> (Metrics, report::ConfidenceSummary) {
+pub fn compute_metrics(parsed: &parser::ParsedBuildOutput) -> (Metrics, report::ConfidenceSummary) {
     let mut new_bytes = parsed.counters.predicted_update_bytes;
     let mut changed_content_bytes = parsed.counters.changed_content_bytes;
 
@@ -194,6 +219,7 @@ mod tests {
             },
             offenders: vec![],
             sources: vec!["x.log".to_string()],
+            per_depot: vec![],
         };
 
         let (metrics, confidence) = compute_metrics(&parsed);
