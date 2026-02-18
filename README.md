@@ -118,7 +118,7 @@ Add patchwaste as a budget gate in your GitHub Actions workflow:
       --out patchwaste-out
 ```
 
-Exit code `0` means the patch is within budget. Exit code `2` means it exceeded the threshold — the step fails and the pipeline stops.
+Exit code `0` means the patch is within budget. Exit code `2` means it exceeded the threshold. The step fails and the pipeline stops.
 
 Store `patchwaste-out/report.json` from a known-good build as your `baseline.json`. Update it when you intentionally accept a new baseline.
 
