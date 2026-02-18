@@ -1,0 +1,57 @@
+name: Usage report
+description: Share real usage data from a run so we can improve onboarding and reliability.
+title: "[usage] "
+labels:
+  - open-core
+  - usage-signal
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing a real usage signal. This helps prioritize what to improve next.
+
+  - type: input
+    id: repo_type
+    attributes:
+      label: Repo type
+      description: What kind of project are you running patchwaste against?
+      placeholder: Unreal game, prototype, CI sandbox, etc.
+    validations:
+      required: true
+
+  - type: textarea
+    id: run_command
+    attributes:
+      label: Command used
+      description: Paste the command you ran (redact secrets).
+      placeholder: patchwaste analyse --input ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - First run succeeded
+        - Needed doc/help to succeed
+        - Failed or blocked
+    validations:
+      required: true
+
+  - type: textarea
+    id: friction
+    attributes:
+      label: Biggest friction point
+      description: What slowed you down most?
+      placeholder: Setup step, baseline flow, output interpretation, etc.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: repeat_usage
+    attributes:
+      label: Repeat usage signal
+      options:
+        - label: I have run patchwaste on this repo more than once
+        - label: I plan to keep it as a CI gate

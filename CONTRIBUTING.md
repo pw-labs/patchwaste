@@ -7,22 +7,16 @@ Thanks for your interest in improving `patchwaste`.
 1. Open an issue (or confirm an existing one) before major changes.
 2. Create a focused branch.
 3. Add/adjust tests with your change.
-4. Enable local pre-commit hooks (one-time setup):
+4. Bootstrap your local dev environment (one-time setup):
 
 ```bash
-# Option A: git hooks (no extra tools)
-git config core.hooksPath .githooks
-
-# Option B: pre-commit framework (requires Python)
-pre-commit install
+./scripts/bootstrap-dev.sh
 ```
 
-5. Run local checks (also enforced by the hooks above):
+5. Run local checks (same as CI, also enforced by hooks):
 
 ```bash
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace --all-targets
+./scripts/verify.sh
 ```
 
 6. Submit a PR with clear rationale and test evidence.

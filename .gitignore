@@ -10,3 +10,9 @@ patchwaste-out-test/
 AGENTS.md
 .claude/
 docs/
+
+# PM local state (do not commit)
+.pm-progress
+.pm-data/
+.pm-standards-report.json
+pm.db

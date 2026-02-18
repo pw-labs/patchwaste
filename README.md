@@ -27,6 +27,20 @@ cargo run -p patchwaste -- analyse --input fixtures/synthetic_case_01/BuildOutpu
 cat patchwaste-out/report.md
 ```
 
+## Clone and start contributing
+
+```bash
+git clone https://github.com/patchwaste/patchwaste.git
+cd patchwaste
+./scripts/bootstrap-dev.sh
+./scripts/verify.sh
+```
+
+This gives you:
+- pinned Rust toolchain (`rust-toolchain.toml`)
+- local git hooks (`.githooks/pre-commit`)
+- one command (`./scripts/verify.sh`) matching CI checks
+
 Example output:
 
 ```
@@ -137,13 +151,11 @@ This repository is the Apache-2.0 open core for local-first Unreal/Steam patch w
 ## Development
 
 ```bash
-# Set up pre-commit hooks (one-time)
-git config core.hooksPath .githooks
+# One-time setup
+./scripts/bootstrap-dev.sh
 
-# Run local checks
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets -- -D warnings
-cargo test --workspace --all-targets
+# Local checks (same commands as CI)
+./scripts/verify.sh
 ```
 
 See `CONTRIBUTING.md` for the full contribution workflow.
