@@ -9,7 +9,7 @@ patchwaste:
   before_script:
     - cargo install patchwaste --locked
   script:
-    - patchwaste analyze
+    - patchwaste analyse
         --input "$CI_PROJECT_DIR/BuildOutput"
         --sha "$CI_COMMIT_SHA"
         --branch "$CI_COMMIT_BRANCH"

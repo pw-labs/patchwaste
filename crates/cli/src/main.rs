@@ -6,7 +6,7 @@ use clap::{Parser, Subcommand};
 use patchwaste_core::config::Config;
 use patchwaste_core::report::{BuildMetadata, Report};
 use patchwaste_core::types::Severity;
-use patchwaste_core::{analyze_dir, AnalyzeOptions};
+use patchwaste_core::{analyse_dir, AnalyseOptions};
 
 #[derive(Parser, Debug)]
 #[command(
@@ -21,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    Analyze {
+    Analyse {
         #[arg(long)]
         input: PathBuf,
 
@@ -103,7 +103,7 @@ fn main() -> std::process::ExitCode {
     let cli = Cli::parse();
 
     let res = match cli.cmd {
-        Commands::Analyze {
+        Commands::Analyse {
             input,
             baseline,
             budget_ratio,
@@ -119,7 +119,7 @@ fn main() -> std::process::ExitCode {
             let budget_ratio = budget_ratio.or(cfg.budget_ratio);
             let strict = strict || cfg.strict.unwrap_or(false);
             let build_metadata = resolve_build_metadata(sha, branch, build_id);
-            run_analyze(
+            run_analyse(
                 &input,
                 baseline.as_deref(),
                 budget_ratio,
@@ -158,7 +158,7 @@ fn print_banner() {
     );
 }
 
-fn waste_color(ratio: f64) -> &'static str {
+fn waste_colour(ratio: f64) -> &'static str {
     let s = style();
     if ratio < 0.3 {
         s.green
@@ -169,7 +169,7 @@ fn waste_color(ratio: f64) -> &'static str {
     }
 }
 
-fn severity_color(sev: &Severity) -> &'static str {
+fn severity_colour(sev: &Severity) -> &'static str {
     let s = style();
     match sev {
         Severity::High => s.red,
@@ -193,7 +193,7 @@ fn commas(n: u64) -> String {
 
 fn print_report(report: &Report, out: &Path) {
     let s = style();
-    let wc = waste_color(report.metrics.waste_ratio);
+    let wc = waste_colour(report.metrics.waste_ratio);
 
     eprintln!(
         "  {dim}new_bytes             {reset}{bold}{}{reset}",
@@ -228,7 +228,7 @@ fn print_report(report: &Report, out: &Path) {
     if !report.findings.is_empty() {
         eprintln!();
         for f in &report.findings {
-            let sc = severity_color(&f.severity);
+            let sc = severity_colour(&f.severity);
             eprintln!(
                 "  {sc}{:?}{reset}  {}",
                 f.severity,
@@ -299,7 +299,7 @@ fn resolve_build_metadata(
     })
 }
 
-fn run_analyze(
+fn run_analyse(
     input: &Path,
     baseline: Option<&Path>,
     budget_ratio: Option<f64>,
@@ -312,15 +312,15 @@ fn run_analyze(
 
     print_banner();
 
-    let opts = AnalyzeOptions {
+    let opts = AnalyseOptions {
         strict,
         budget_ratio,
         baseline_path: baseline.map(|p| p.to_path_buf()),
         build_metadata,
-        ..AnalyzeOptions::default()
+        ..AnalyseOptions::default()
     };
 
-    let mut report = analyze_dir(input, opts)?;
+    let mut report = analyse_dir(input, opts)?;
     report.inputs.input_path = input.display().to_string();
 
     std::fs::create_dir_all(out).with_context(|| format!("create out dir {}", out.display()))?;
@@ -401,22 +401,24 @@ mod tests {
     }
 
     #[test]
-    fn waste_color_thresholds() {
-        assert_eq!(waste_color(0.1), style().green);
-        assert_eq!(waste_color(0.4), style().yellow);
-        assert_eq!(waste_color(0.8), style().red);
-    }
-
-    #[test]
-    fn severity_color_thresholds() {
-        assert_eq!(severity_color(&Severity::High), style().red);
-        assert_eq!(severity_color(&Severity::Medium), style().yellow);
-        assert_eq!(severity_color(&Severity::Low), style().dim);
+    #[serial]
+    fn waste_colour_thresholds() {
+        assert_eq!(waste_colour(0.1), style().green);
+        assert_eq!(waste_colour(0.4), style().yellow);
+        assert_eq!(waste_colour(0.8), style().red);
     }
 
     #[test]
     #[serial]
-    fn style_respects_no_color() {
+    fn severity_colour_thresholds() {
+        assert_eq!(severity_colour(&Severity::High), style().red);
+        assert_eq!(severity_colour(&Severity::Medium), style().yellow);
+        assert_eq!(severity_colour(&Severity::Low), style().dim);
+    }
+
+    #[test]
+    #[serial]
+    fn style_respects_no_colour() {
         std::env::set_var("NO_COLOR", "1");
         assert_eq!(style().bold, "");
         std::env::remove_var("NO_COLOR");

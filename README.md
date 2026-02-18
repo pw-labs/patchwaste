@@ -23,7 +23,7 @@ Think of it like this: if you changed one sentence in a book, but the printer ma
 ## Quickstart
 
 ```bash
-cargo run -p patchwaste -- analyze --input fixtures/synthetic_case_01/BuildOutput --out patchwaste-out
+cargo run -p patchwaste -- analyse --input fixtures/synthetic_case_01/BuildOutput --out patchwaste-out
 cat patchwaste-out/report.md
 ```
 
@@ -71,13 +71,13 @@ Use the included automation-safe dummy fixture:
 
 ```bash
 # 1) Create baseline
-cargo run -p patchwaste -- analyze \
+cargo run -p patchwaste -- analyse \
   --input fixtures/automation_dummy/BuildOutput \
   --out patchwaste-out
 cp patchwaste-out/report.json baseline.json
 
 # 2) Compare against baseline (expected pass, exit 0)
-cargo run -p patchwaste -- analyze \
+cargo run -p patchwaste -- analyse \
   --input fixtures/automation_dummy/BuildOutput \
   --baseline baseline.json \
   --budget-ratio 1.25 \
@@ -86,7 +86,7 @@ echo $?   # 0
 
 # 3) Simulate failing budget gate by using a tiny baseline (expected exit 2)
 printf '{"metrics":{"new_bytes":1000}}\n' > baseline-small.json
-cargo run -p patchwaste -- analyze \
+cargo run -p patchwaste -- analyse \
   --input fixtures/automation_dummy/BuildOutput \
   --baseline baseline-small.json \
   --budget-ratio 1.25 \
@@ -111,7 +111,7 @@ Add patchwaste as a budget gate in your GitHub Actions workflow:
 
 - name: Run patchwaste budget gate
   run: |
-    patchwaste analyze \
+    patchwaste analyse \
       --input path/to/BuildOutput \
       --baseline baseline.json \
       --budget-ratio 1.25 \

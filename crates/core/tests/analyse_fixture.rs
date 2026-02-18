@@ -4,17 +4,17 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use patchwaste_core::{analyze_dir, AnalyzeOptions};
+use patchwaste_core::{analyse_dir, AnalyseOptions};
 
 #[test]
-fn analyze_fixture_produces_stable_report_json() {
+fn analyse_fixture_produces_stable_report_json() {
     let input = Path::new("../../fixtures/synthetic_case_01/BuildOutput");
-    let opts = AnalyzeOptions {
+    let opts = AnalyseOptions {
         strict: false,
-        ..AnalyzeOptions::default()
+        ..AnalyseOptions::default()
     };
 
-    let report = analyze_dir(input, opts).expect("analyze_dir ok");
+    let report = analyse_dir(input, opts).expect("analyse_dir ok");
 
     assert_eq!(report.metrics.new_bytes, 12_345_678);
     assert_eq!(report.metrics.changed_content_bytes, 2_000_000);
@@ -30,12 +30,12 @@ fn analyze_fixture_produces_stable_report_json() {
 #[test]
 fn strict_mode_requires_required_counter() {
     let input = Path::new("../../fixtures/synthetic_case_missing_required/BuildOutput");
-    let opts = AnalyzeOptions {
+    let opts = AnalyseOptions {
         strict: true,
-        ..AnalyzeOptions::default()
+        ..AnalyseOptions::default()
     };
 
-    let err = analyze_dir(input, opts).unwrap_err();
+    let err = analyse_dir(input, opts).unwrap_err();
     let msg = format!("{:#}", err);
     assert!(
         msg.to_lowercase().contains("missing required counter")
@@ -53,13 +53,13 @@ fn baseline_comparison_and_budget_gate_are_computed() {
     let baseline_path = std::env::temp_dir().join(format!("patchwaste-core-baseline-{nonce}.json"));
     fs::write(&baseline_path, r#"{"metrics":{"new_bytes":1000}}"#).unwrap();
 
-    let opts = AnalyzeOptions {
+    let opts = AnalyseOptions {
         baseline_path: Some(baseline_path.clone()),
         budget_ratio: Some(1.25),
-        ..AnalyzeOptions::default()
+        ..AnalyseOptions::default()
     };
 
-    let report = analyze_dir(input, opts).expect("analyze_dir with baseline");
+    let report = analyse_dir(input, opts).expect("analyse_dir with baseline");
     let cmp = report
         .baseline_comparison
         .as_ref()
@@ -76,7 +76,7 @@ fn baseline_comparison_and_budget_gate_are_computed() {
 #[test]
 fn automation_dummy_fixture_is_parseable() {
     let input = Path::new("../../fixtures/automation_dummy/BuildOutput");
-    let report = analyze_dir(input, AnalyzeOptions::default()).expect("analyze dummy fixture");
+    let report = analyse_dir(input, AnalyseOptions::default()).expect("analyse dummy fixture");
 
     assert_eq!(report.metrics.new_bytes, 4_194_304);
     assert_eq!(report.metrics.changed_content_bytes, 1_048_576);
@@ -85,7 +85,7 @@ fn automation_dummy_fixture_is_parseable() {
 #[test]
 fn multi_depot_fixture_produces_per_depot_metrics() {
     let input = Path::new("../../fixtures/multi_depot/BuildOutput");
-    let report = analyze_dir(input, AnalyzeOptions::default()).expect("analyze multi_depot");
+    let report = analyse_dir(input, AnalyseOptions::default()).expect("analyse multi_depot");
 
     assert_eq!(report.per_depot.len(), 2);
 

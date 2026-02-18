@@ -1,5 +1,5 @@
 name: Bug report
-about: Report incorrect behavior in open-core CLI/parser/reporting
+about: Report incorrect behaviour in open-core CLI/parser/reporting
 title: "bug: "
 labels: ["bug", "open-core"]
 body:

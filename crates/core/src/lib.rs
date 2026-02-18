@@ -18,7 +18,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
-pub struct AnalyzeOptions {
+pub struct AnalyseOptions {
     pub strict: bool,
     pub baseline_path: Option<std::path::PathBuf>,
     pub budget_ratio: Option<f64>,
@@ -26,7 +26,7 @@ pub struct AnalyzeOptions {
     pub build_metadata: Option<report::BuildMetadata>,
 }
 
-impl Default for AnalyzeOptions {
+impl Default for AnalyseOptions {
     fn default() -> Self {
         Self {
             strict: false,
@@ -38,7 +38,7 @@ impl Default for AnalyzeOptions {
     }
 }
 
-pub fn analyze_dir(input: &Path, opts: AnalyzeOptions) -> anyhow::Result<Report> {
+pub fn analyse_dir(input: &Path, opts: AnalyseOptions) -> anyhow::Result<Report> {
     let parse_mode = if opts.strict {
         ParseMode::Strict
     } else {

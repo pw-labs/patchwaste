@@ -1,5 +1,5 @@
 ---
-source: crates/core/tests/analyze_fixture.rs
+source: crates/core/tests/analyse_fixture.rs
 assertion_line: 25
 expression: report
 ---

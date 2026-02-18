@@ -6,13 +6,13 @@ use std::{
 };
 
 #[test]
-fn cli_analyze_writes_reports_and_exits_0_without_budget() {
+fn cli_analyse_writes_reports_and_exits_0_without_budget() {
     let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures/synthetic_case_01/BuildOutput");
 
     let mut cmd = cargo_bin_cmd!("patchwaste");
     cmd.args([
-        "analyze",
+        "analyse",
         "--input",
         fixture_path.to_str().unwrap(),
         "--out",
@@ -28,7 +28,7 @@ fn cli_analyze_writes_reports_and_exits_0_without_budget() {
 }
 
 #[test]
-fn cli_analyze_exits_2_when_budget_fails() {
+fn cli_analyse_exits_2_when_budget_fails() {
     let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures/synthetic_case_01/BuildOutput");
     let nonce = SystemTime::now()
@@ -41,7 +41,7 @@ fn cli_analyze_exits_2_when_budget_fails() {
 
     let mut cmd = cargo_bin_cmd!("patchwaste");
     cmd.args([
-        "analyze",
+        "analyse",
         "--input",
         fixture_path.to_str().unwrap(),
         "--baseline",
@@ -58,7 +58,7 @@ fn cli_analyze_exits_2_when_budget_fails() {
 }
 
 #[test]
-fn cli_analyze_writes_junit_xml_when_requested() {
+fn cli_analyse_writes_junit_xml_when_requested() {
     let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures/synthetic_case_01/BuildOutput");
     let nonce = SystemTime::now()
@@ -69,7 +69,7 @@ fn cli_analyze_writes_junit_xml_when_requested() {
 
     let mut cmd = cargo_bin_cmd!("patchwaste");
     cmd.args([
-        "analyze",
+        "analyse",
         "--input",
         fixture_path.to_str().unwrap(),
         "--output-format",
@@ -94,10 +94,10 @@ fn cli_analyze_writes_junit_xml_when_requested() {
 }
 
 #[test]
-fn cli_analyze_errors_on_missing_input() {
+fn cli_analyse_errors_on_missing_input() {
     let mut cmd = cargo_bin_cmd!("patchwaste");
     cmd.args([
-        "analyze",
+        "analyse",
         "--input",
         "does-not-exist",
         "--out",
