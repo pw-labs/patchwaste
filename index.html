@@ -83,13 +83,24 @@
     }
     .terminal .prompt { color: var(--dim); }
     .terminal .cmd { color: var(--fg); }
+    .terminal .metric-row {
+      display: grid;
+      grid-template-columns: 22ch auto;
+      padding-left: 2ch;
+    }
     .terminal .metric-label { color: var(--dim); }
     .terminal .metric-val { color: var(--fg); font-weight: 700; }
     .terminal .metric-bad { color: var(--red); font-weight: 700; }
+    .terminal .sev-row {
+      display: grid;
+      grid-template-columns: 8ch auto;
+      padding-left: 2ch;
+    }
     .terminal .sev-high { color: var(--red); }
     .terminal .sev-med { color: var(--orange); }
-    .terminal .pass { color: var(--green); font-weight: 700; }
-    .terminal .file { color: var(--dim); }
+    .terminal .pass { color: var(--green); font-weight: 700; padding-left: 2ch; display: block; }
+    .terminal .file { color: var(--dim); padding-left: 2ch; display: block; }
+    .terminal .logo-line { padding-left: 2ch; }
     .links {
       display: flex;
       gap: 24px;
@@ -158,26 +169,26 @@
 
   <div class="install">
     <div class="install-label">Install</div>
-    <div class="install-cmd">cargo install --git https://github.com/patchwaste/patchwaste patchwaste</div>
+    <div class="install-cmd">cargo install --git https://github.com/pw-labs/patchwaste patchwaste</div>
   </div>
 
   <div class="terminal">
     <div><span class="prompt">$</span> <span class="cmd">patchwaste analyze --input BuildOutput --out patchwaste-out</span></div>
     <br>
-    <div>&nbsp; <span class="patch" style="font-weight:700">patch</span><span class="pipe" style="color:var(--orange)">|</span><span style="color:var(--dim)">waste</span> &nbsp;<span style="color:var(--dim)">steampipe efficiency gate</span></div>
+    <div class="logo-line"><span style="font-weight:700">patch</span><span style="color:var(--orange)">|</span><span style="color:var(--dim)">waste</span> &nbsp;<span style="color:var(--dim)">steampipe efficiency gate</span></div>
     <br>
-    <div>&nbsp; <span class="metric-label">new_bytes &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span class="metric-val">12,345,678</span></div>
-    <div>&nbsp; <span class="metric-label">changed_content_bytes </span><span class="metric-val">2,000,000</span></div>
-    <div>&nbsp; <span class="metric-label">waste_ratio &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span><span class="metric-bad">0.838</span></div>
-    <div>&nbsp; <span class="metric-label">delta_efficiency &nbsp;&nbsp;&nbsp;&nbsp; </span><span class="metric-val">0.162</span></div>
+    <div class="metric-row"><span class="metric-label">new_bytes</span><span class="metric-val">12,345,678</span></div>
+    <div class="metric-row"><span class="metric-label">changed_content_bytes</span><span class="metric-val">2,000,000</span></div>
+    <div class="metric-row"><span class="metric-label">waste_ratio</span><span class="metric-bad">0.838</span></div>
+    <div class="metric-row"><span class="metric-label">delta_efficiency</span><span class="metric-val">0.162</span></div>
     <br>
-    <div>&nbsp; <span class="sev-high">High</span> &nbsp;HIGH_WASTE_RATIO</div>
-    <div>&nbsp; <span class="sev-med">Medium</span> &nbsp;LARGE_TOP_OFFENDER</div>
+    <div class="sev-row"><span class="sev-high">High</span><span>HIGH_WASTE_RATIO</span></div>
+    <div class="sev-row"><span class="sev-med">Medium</span><span>LARGE_TOP_OFFENDER</span></div>
     <br>
-    <div>&nbsp; <span class="file">&rarr; patchwaste-out/report.json</span></div>
-    <div>&nbsp; <span class="file">&rarr; patchwaste-out/report.md</span></div>
+    <span class="file">&rarr; patchwaste-out/report.json</span>
+    <span class="file">&rarr; patchwaste-out/report.md</span>
     <br>
-    <div>&nbsp; <span class="pass">PASS</span></div>
+    <span class="pass">PASS</span>
   </div>
 
   <div class="features">
@@ -192,10 +203,10 @@
   </div>
 
   <div class="links">
-    <a href="https://github.com/patchwaste/patchwaste">GitHub</a>
-    <a href="https://github.com/patchwaste/patchwaste/releases/tag/v0.1.0">v0.1.0 Release</a>
+    <a href="https://github.com/pw-labs/patchwaste">GitHub</a>
+    <a href="https://github.com/pw-labs/patchwaste/releases/tag/v0.1.0">v0.1.0 Release</a>
   </div>
 
-  <footer>Apache-2.0 &middot; <a href="https://github.com/patchwaste/patchwaste">patchwaste/patchwaste</a></footer>
+  <footer>Apache-2.0 &middot; <a href="https://github.com/pw-labs/patchwaste">pw-labs/patchwaste</a></footer>
 </body>
 </html>
