@@ -21,7 +21,8 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    Analyse {
+    #[command(name = "analyze", visible_alias = "analyse")]
+    Analyze {
         #[arg(long)]
         input: PathBuf,
 
@@ -103,7 +104,7 @@ fn main() -> std::process::ExitCode {
     let cli = Cli::parse();
 
     let res = match cli.cmd {
-        Commands::Analyse {
+        Commands::Analyze {
             input,
             baseline,
             budget_ratio,

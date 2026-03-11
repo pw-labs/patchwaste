@@ -90,7 +90,7 @@ impl Report {
     ) -> Self {
         let build_metadata = build_metadata.filter(|m| !m.is_empty());
         Self {
-            report_version: "1.0.0".to_string(),
+            report_version: "0.1.0".to_string(),
             inputs: Inputs {
                 input_path: input.display().to_string(),
                 parse_mode: match mode {
@@ -313,7 +313,7 @@ mod tests {
     #[test]
     fn markdown_includes_sections_and_findings() {
         let report = Report {
-            report_version: "1.0.0".to_string(),
+            report_version: "0.1.0".to_string(),
             inputs: Inputs {
                 input_path: "x".to_string(),
                 parse_mode: "STRICT".to_string(),
@@ -434,7 +434,7 @@ mod tests {
     #[test]
     fn junit_xml_contains_findings_and_budget_gate() {
         let report = Report {
-            report_version: "1.0.0".to_string(),
+            report_version: "0.1.0".to_string(),
             inputs: Inputs {
                 input_path: "x".to_string(),
                 parse_mode: "BEST_EFFORT".to_string(),
