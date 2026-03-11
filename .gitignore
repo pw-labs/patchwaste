@@ -9,7 +9,12 @@ patchwaste-out-test/
 *.tmp
 AGENTS.md
 .claude/
-docs/
+docs/*
+!docs/CHARTER.md
+!docs/FAQ.md
+!docs/open-core-scope.md
+!docs/roadmap.md
+!docs/tutorial-canonical-example.md
 
 # PM local state (do not commit)
 .pm-progress

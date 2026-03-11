@@ -6,6 +6,36 @@ use std::{
 };
 
 #[test]
+fn cli_analyze_alias_writes_reports_and_exits_0_without_budget() {
+    let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/synthetic_case_01/BuildOutput");
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let out_dir = format!("patchwaste-out-analyze-{nonce}");
+
+    let mut cmd = cargo_bin_cmd!("patchwaste");
+    cmd.args([
+        "analyze",
+        "--input",
+        fixture_path.to_str().unwrap(),
+        "--out",
+        &out_dir,
+    ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("new_bytes=12345678"));
+
+    let out_path = std::path::Path::new(&out_dir);
+    assert!(out_path.join("report.json").exists());
+    assert!(out_path.join("report.md").exists());
+
+    let _ = fs::remove_dir_all(out_path);
+}
+
+#[test]
 fn cli_analyse_writes_reports_and_exits_0_without_budget() {
     let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures/synthetic_case_01/BuildOutput");

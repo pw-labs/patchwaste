@@ -413,7 +413,7 @@ dependencies = [
 
 [[package]]
 name = "patchwaste"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -426,7 +426,7 @@ dependencies = [
 
 [[package]]
 name = "patchwaste-core"
-version = "1.0.0"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "insta",
