@@ -21,3 +21,8 @@ docs/*
 .pm-data/
 .pm-standards-report.json
 pm.db
+
+# README demo render artefacts (regenerated via scripts/record_demo.py)
+demo.mp4
+*.webm
+.venv-demo/

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>patchwaste demo</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --panel: #1a1a1a;
+    --line: #292524;
+    --fg: #e7e5e4;
+    --mute: #78716c;
+    --rust: #c2410c;
+    --rust-bright: #ea580c;
+    --green: #22c55e;
+    --red: #ef4444;
+    --yellow: #eab308;
+    --blue: #60a5fa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 1280px; height: 720px;
+    background: var(--bg); color: var(--fg);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace;
+    font-size: 16px; line-height: 1.55;
+    overflow: hidden;
+  }
+  .stage { position: relative; width: 100%; height: 100%; }
+  .scene {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    opacity: 0;
+  }
+  .scene.center { align-items: center; justify-content: center; }
+  .pad { padding: 56px 80px; }
+
+  /* SCENE 1 title 0 to 3.5s */
+  .s1 {
+    animation: fadeInOut 3.5s ease-in-out 0s 1 forwards;
+    background: radial-gradient(circle at 50% 45%, #1c1917 0%, var(--bg) 70%);
+  }
+  .wordmark { font-size: 96px; font-weight: 700; letter-spacing: -2px; opacity: 0; transform: scale(0.92); animation: scaleIn 1.2s cubic-bezier(.2,.7,.2,1) 0.2s forwards; }
+  .wordmark .pipe { color: var(--rust-bright); }
+  .wordmark .light { color: var(--mute); font-weight: 400; }
+  .tagline { font-size: 22px; color: var(--mute); margin-top: 22px; opacity: 0; animation: fadeIn 0.9s ease-out 1.0s forwards; letter-spacing: 0.5px; }
+  .badges { margin-top: 36px; display: flex; gap: 12px; opacity: 0; animation: fadeIn 0.9s ease-out 1.6s forwards; }
+  .badge { font-size: 13px; color: var(--mute); border: 1px solid var(--line); padding: 6px 12px; border-radius: 4px; }
+  .badge.accent { color: var(--rust-bright); border-color: var(--rust); }
+
+  /* SCENE 2 command typewriter 3.0s to 8.0s */
+  .s2 {
+    animation: fadeInOut 5s ease 3.0s 1 forwards;
+    padding: 56px 80px;
+  }
+  .term-header { color: var(--mute); font-size: 13px; margin-bottom: 18px; opacity: 0; animation: fadeIn 0.6s ease 3.2s forwards; }
+  .term-header .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--line); margin-right: 6px; vertical-align: middle; }
+  .term-header .dot:nth-child(1) { background: #ef4444; }
+  .term-header .dot:nth-child(2) { background: #eab308; }
+  .term-header .dot:nth-child(3) { background: #22c55e; }
+  .cmd { font-size: 22px; }
+  .prompt { color: var(--green); }
+  .typed {
+    display: inline-block; overflow: hidden; white-space: nowrap;
+    width: 0;
+    animation: type 2.6s steps(58, end) 3.5s forwards, blink 0.9s step-end infinite 6.1s;
+    border-right: 2px solid var(--fg);
+    vertical-align: bottom;
+  }
+
+  /* SCENE 3 output rendering 7.5s to 19s */
+  .s3 {
+    animation: fadeInOut 11.5s ease 7.5s 1 forwards;
+    padding: 40px 80px;
+  }
+  .out-prompt { font-size: 14px; color: var(--mute); margin-bottom: 18px; opacity: 0; animation: fadeIn 0.5s ease 7.7s forwards; }
+  .out-prompt .green { color: var(--green); }
+  .ln {
+    display: block; opacity: 0; transform: translateY(6px);
+    font-size: 16px;
+    animation: lineIn 0.45s cubic-bezier(.2,.7,.2,1) forwards;
+  }
+  .ln .key { color: var(--mute); display: inline-block; width: 28ch; }
+  .ln .val { color: var(--fg); font-weight: 700; }
+  .ln .red { color: var(--red); }
+  .ln .green-bold { color: var(--green); font-weight: 700; }
+  .ln.head .pipe { color: var(--rust-bright); }
+  .ln.head { font-weight: 700; }
+  .ln .sev-h { color: var(--red); font-weight: 700; }
+  .ln .sev-m { color: var(--yellow); font-weight: 700; }
+  .ln.path { color: var(--mute); font-size: 14px; }
+  .ln.spacer { height: 8px; }
+
+  .ln:nth-child(1)  { animation-delay: 8.0s; }
+  .ln:nth-child(2)  { animation-delay: 8.4s; }
+  .ln:nth-child(3)  { animation-delay: 8.8s; }
+  .ln:nth-child(4)  { animation-delay: 9.2s; }
+  .ln:nth-child(5)  { animation-delay: 9.6s; }
+  .ln:nth-child(6)  { animation-delay: 10.0s; }
+  .ln:nth-child(7)  { animation-delay: 10.4s; }
+  .ln:nth-child(8)  { animation-delay: 10.8s; }
+  .ln:nth-child(9)  { animation-delay: 11.2s; }
+  .ln:nth-child(10) { animation-delay: 11.6s; }
+  .ln:nth-child(11) { animation-delay: 12.0s; }
+  .ln:nth-child(12) { animation-delay: 12.4s; }
+  .ln:nth-child(13) { animation-delay: 12.8s; }
+  .ln:nth-child(14) { animation-delay: 13.2s; }
+  .ln:nth-child(15) { animation-delay: 13.6s; }
+
+  .pulse-red {
+    animation: lineIn 0.45s cubic-bezier(.2,.7,.2,1) 13.2s forwards, pulseRed 1.4s ease-in-out 14.0s 2 alternate;
+  }
+
+  /* SCENE 4 findings card 17s to 25s */
+  .s4 {
+    animation: fadeInOut 8s ease 17.0s 1 forwards;
+    padding: 64px 80px;
+    flex-direction: row; gap: 36px;
+  }
+  .card {
+    flex: 1; background: var(--panel); border: 1px solid var(--line);
+    border-left: 3px solid var(--red); padding: 28px 32px;
+    opacity: 0; transform: translateX(40px);
+    animation: slideIn 0.7s cubic-bezier(.2,.7,.2,1) 17.4s forwards;
+  }
+  .card.medium { border-left-color: var(--yellow); animation-delay: 18.4s; }
+  .card h3 { font-size: 20px; color: var(--fg); margin-bottom: 6px; letter-spacing: 0.3px; }
+  .card .sev { font-size: 12px; color: var(--red); margin-bottom: 18px; text-transform: uppercase; letter-spacing: 1px; }
+  .card.medium .sev { color: var(--yellow); }
+  .card .cause { font-size: 14px; color: var(--mute); margin-bottom: 18px; line-height: 1.55; }
+  .card .label { font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .card ul { list-style: none; }
+  .card li { font-size: 14px; color: var(--fg); padding: 4px 0; padding-left: 14px; position: relative; }
+  .card li::before { content: '→'; position: absolute; left: 0; color: var(--rust-bright); }
+  .card .evidence { background: #0c0c0c; border: 1px solid var(--line); padding: 10px 14px; font-size: 13px; color: var(--mute); margin-bottom: 18px; }
+
+  /* SCENE 5 end card 24.5s to 30s */
+  .s5 {
+    animation: fadeIn 1.2s ease 24.5s forwards;
+    background: radial-gradient(circle at 50% 50%, #1c1917 0%, var(--bg) 70%);
+  }
+  .end-mark { font-size: 56px; font-weight: 700; letter-spacing: -1.5px; opacity: 0; animation: fadeIn 0.8s ease 25.0s forwards; }
+  .end-mark .pipe { color: var(--rust-bright); }
+  .end-mark .light { color: var(--mute); font-weight: 400; font-size: 36px; }
+  .end-tag { font-size: 18px; color: var(--mute); margin-top: 18px; opacity: 0; animation: fadeIn 0.8s ease 25.5s forwards; }
+  .end-url { font-size: 22px; color: var(--rust-bright); margin-top: 32px; opacity: 0; animation: fadeIn 0.8s ease 26.2s forwards; }
+  .end-foot { font-size: 13px; color: var(--mute); margin-top: 40px; opacity: 0; animation: fadeIn 0.8s ease 26.8s forwards; letter-spacing: 1px; }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+  @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+  @keyframes fadeInOut {
+    0%  { opacity: 0; }
+    8%  { opacity: 1; }
+    88% { opacity: 1; }
+    100%{ opacity: 0; }
+  }
+  @keyframes scaleIn { to { opacity: 1; transform: scale(1); } }
+  @keyframes type { to { width: 100%; } }
+  @keyframes blink { 50% { border-color: transparent; } }
+  @keyframes lineIn { to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+  @keyframes pulseRed {
+    0%   { text-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+    100% { text-shadow: 0 0 18px rgba(239, 68, 68, 0.65); }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- SCENE 1 title -->
+  <div class="scene s1 center">
+    <div class="wordmark">patch<span class="pipe">|</span>waste<span class="light"> · cli</span></div>
+    <div class="tagline">Catch CDN waste before players see it</div>
+    <div class="badges">
+      <span class="badge">Rust</span>
+      <span class="badge">GitHub Action</span>
+      <span class="badge accent">Apache 2.0 · open core</span>
+    </div>
+  </div>
+
+  <!-- SCENE 2 command typewriter -->
+  <div class="scene s2">
+    <div class="term-header"><span class="dot"></span><span class="dot"></span><span class="dot"></span> &nbsp; ~/studio/build</div>
+    <div class="cmd">
+      <span class="prompt">$</span>
+      <span class="typed">patchwaste analyze --input BuildOutput --out report</span>
+    </div>
+  </div>
+
+  <!-- SCENE 3 output rendering -->
+  <div class="scene s3">
+    <div class="out-prompt"><span class="green">$</span> patchwaste analyze --input BuildOutput --out report</div>
+
+    <span class="ln head">patch<span class="pipe">|</span>waste &nbsp;<span style="color:var(--mute);font-weight:400">steampipe efficiency gate</span></span>
+    <span class="ln spacer"></span>
+    <span class="ln" style="color:var(--mute);font-size:14px">new_bytes=12345678 changed_content_bytes=2000000 waste_ratio=0.838</span>
+    <span class="ln spacer"></span>
+    <span class="ln"><span class="key">new_bytes</span><span class="val">12,345,678</span></span>
+    <span class="ln"><span class="key">changed_content_bytes</span><span class="val">2,000,000</span></span>
+    <span class="ln pulse-red"><span class="key">waste_ratio</span><span class="val red">0.838</span></span>
+    <span class="ln"><span class="key">delta_efficiency</span><span class="val">0.162</span></span>
+    <span class="ln spacer"></span>
+    <span class="ln"><span class="sev-h">High</span> &nbsp; HIGH_WASTE_RATIO</span>
+    <span class="ln"><span class="sev-m">Medium</span> &nbsp; LARGE_TOP_OFFENDER</span>
+    <span class="ln spacer"></span>
+    <span class="ln path">→ patchwaste-out/report.json</span>
+    <span class="ln path">→ patchwaste-out/report.md</span>
+    <span class="ln spacer"></span>
+    <span class="ln"><span class="green-bold">PASS</span></span>
+  </div>
+
+  <!-- SCENE 4 findings detail -->
+  <div class="scene s4">
+    <div class="card">
+      <div class="sev">High severity</div>
+      <h3>HIGH_WASTE_RATIO</h3>
+      <div class="cause">Large packed file churn or content reorder causing many new chunks.</div>
+      <div class="label">Evidence</div>
+      <div class="evidence">waste_ratio=0.838</div>
+      <div class="label">Suggested actions</div>
+      <ul>
+        <li>Avoid reordering assets inside large packed files</li>
+        <li>Split packs by level or realm to localise churn</li>
+        <li>Align pack layout to stable 1 MB boundaries</li>
+      </ul>
+    </div>
+    <div class="card medium">
+      <div class="sev">Medium severity</div>
+      <h3>LARGE_TOP_OFFENDER</h3>
+      <div class="cause">A large file dominates predicted update size.</div>
+      <div class="label">Evidence</div>
+      <div class="evidence">GameContent.pak (800,000,000 bytes)</div>
+      <div class="label">Suggested actions</div>
+      <ul>
+        <li>Split a single pack into multiple smaller packs</li>
+        <li>Stop full-file rewrites for small content changes</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- SCENE 5 end card -->
+  <div class="scene s5 center">
+    <div class="end-mark">patch<span class="pipe">|</span>waste<span class="light"> · cli</span></div>
+    <div class="end-tag">Open core. Free for public repos. Drop-in GitHub Action.</div>
+    <div class="end-url">github.com/pw-labs/patchwaste</div>
+    <div class="end-foot">APACHE 2.0 &nbsp;·&nbsp; UNREAL + STEAM &nbsp;·&nbsp; CI GATE</div>
+  </div>
+
+</div>
+</body>
+</html>
