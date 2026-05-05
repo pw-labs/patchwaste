@@ -16,6 +16,10 @@
 
 https://github.com/user-attachments/assets/f32c6a32-85ed-43a2-bac4-953aa53102a5
 
+## Why this exists
+
+In 2024, Enshrouded shipped a 299KB content change that triggered a 30.6GB Steam download. Studios have complained about opaque SteamPipe patch sizes for 8+ years with zero tooling to catch it before players do. `patchwaste` fills that gap as a focused CI gate that tells you whether your build wasted bandwidth before you push to production.
+
 ## ELI5
 
 You ship a game update. Steam patch is much bigger than expected. `patchwaste` tells you if your build changed too much data for too little real content change.
@@ -169,11 +173,14 @@ See `CONTRIBUTING.md` for the full contribution workflow.
 - Open-core scope: `docs/open-core-scope.md`
 - Roadmap: `docs/roadmap.md`
 
-## Notes
+## Current limitations
 
-- This repo includes a synthetic fixture log. Replace `fixtures/*` with your real SteamPipe preview BuildOutput.
-- This repo also includes `fixtures/automation_dummy/BuildOutput` for CI/test automation.
-- Metrics are labeled as *estimated* unless confidence is HIGH.
+- **Synthetic fixtures only.** The included test data is synthetic. Real SteamPipe BuildOutput from a production title has not yet been tested against the parser. If you have real logs, we want to hear from you.
+- **Unreal + Steam scope.** This tool is intentionally narrow. It targets UE5 pak-based builds distributed through SteamPipe. Other engines and storefronts are out of scope.
+- **Log-level analysis.** `patchwaste` analyses SteamPipe preview log output, not raw binary diffs. Accuracy depends on what SteamPipe reports.
+- **No external validation yet.** Zero studios have run this against production data. The metrics and thresholds are designed from first principles, not calibrated against real-world baselines.
+
+If any of these limits affect your use case, open an issue or reach out. Fixing them is the roadmap.
 
 ## License
 
