@@ -14,6 +14,8 @@
 
 ---
 
+https://github.com/user-attachments/assets/c2de3600-e73e-4024-b71f-ef66bfeff3d7
+
 ## ELI5
 
 You ship a game update. Steam patch is much bigger than expected. `patchwaste` tells you if your build changed too much data for too little real content change.
