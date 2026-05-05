@@ -135,3 +135,33 @@ fn cli_analyse_errors_on_missing_input() {
     ]);
     cmd.assert().failure().code(1);
 }
+
+#[test]
+fn cli_validate_exits_0_for_parseable_fixture() {
+    let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/synthetic_case_01/BuildOutput");
+
+    let mut cmd = cargo_bin_cmd!("patchwaste");
+    cmd.args(["validate", "--input", fixture_path.to_str().unwrap()]);
+
+    cmd.assert().success();
+}
+
+#[test]
+fn cli_validate_exits_1_for_unparseable_fixture() {
+    let fixture_path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/no_match/BuildOutput");
+
+    let mut cmd = cargo_bin_cmd!("patchwaste");
+    cmd.args(["validate", "--input", fixture_path.to_str().unwrap()]);
+
+    cmd.assert().failure().code(1);
+}
+
+#[test]
+fn cli_validate_exits_1_for_missing_path() {
+    let mut cmd = cargo_bin_cmd!("patchwaste");
+    cmd.args(["validate", "--input", "does-not-exist"]);
+
+    cmd.assert().failure().code(1);
+}

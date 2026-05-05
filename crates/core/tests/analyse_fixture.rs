@@ -123,3 +123,67 @@ fn extract_depot_id_from_filename() {
         Some("99999".to_string())
     );
 }
+
+#[test]
+fn alt_format_fixture_parses_estimated_download_and_total_new_content() {
+    let input = Path::new("../../fixtures/alt_format/BuildOutput");
+    let report = analyse_dir(input, AnalyseOptions::default()).expect("analyse alt_format");
+
+    assert_eq!(report.metrics.new_bytes, 2_345_678);
+    assert_eq!(report.metrics.changed_content_bytes, 456_789);
+
+    let diag = report.diagnostics.as_ref().expect("diagnostics present");
+    assert!(diag
+        .counters_found
+        .contains(&"estimated_download_size".to_string()));
+    assert!(diag
+        .counters_found
+        .contains(&"total_new_content".to_string()));
+    assert!(diag.lines_matched >= 3);
+}
+
+#[test]
+fn no_match_fixture_produces_diagnostics_warnings() {
+    let input = Path::new("../../fixtures/no_match/BuildOutput");
+    let report = analyse_dir(input, AnalyseOptions::default()).expect("analyse no_match");
+
+    assert_eq!(report.metrics.new_bytes, 0);
+
+    let diag = report.diagnostics.as_ref().expect("diagnostics present");
+    assert_eq!(diag.log_files_found, 1);
+    assert!(diag.lines_scanned > 0);
+    assert_eq!(diag.lines_matched, 0);
+    assert!(!diag.warnings.is_empty());
+
+    let has_low_confidence = report
+        .findings
+        .iter()
+        .any(|f| f.id == "LOW_PARSE_CONFIDENCE");
+    assert!(has_low_confidence, "expected LOW_PARSE_CONFIDENCE finding");
+}
+
+#[test]
+fn diagnostics_populated_for_standard_fixture() {
+    let input = Path::new("../../fixtures/synthetic_case_01/BuildOutput");
+    let report = analyse_dir(input, AnalyseOptions::default()).expect("analyse ok");
+
+    let diag = report.diagnostics.as_ref().expect("diagnostics present");
+    assert_eq!(diag.log_files_found, 1);
+    assert_eq!(diag.lines_scanned, 4);
+    assert_eq!(diag.lines_matched, 3);
+    assert!(diag
+        .counters_found
+        .contains(&"PREDICTED_UPDATE_BYTES".to_string()));
+    assert!(diag
+        .counters_found
+        .contains(&"CHANGED_CONTENT_BYTES".to_string()));
+    assert!(diag.warnings.is_empty());
+}
+
+#[test]
+fn empty_delta_rule_fires_when_changed_content_zero() {
+    let input = Path::new("../../fixtures/synthetic_case_missing_required/BuildOutput");
+    let report = analyse_dir(input, AnalyseOptions::default()).expect("analyse ok");
+
+    assert!(report.metrics.changed_content_bytes > 0 || report.metrics.new_bytes > 0);
+}

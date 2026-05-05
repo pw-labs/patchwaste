@@ -1,0 +1,12 @@
+[SteamPipe Preview Build]
+Building depot 12345...
+Scanning content files
+File count: 1234
+Total content size: 12,345,678,901 bytes
+Comparing to previous manifest
+New files: 5
+Updated files: 23
+Unchanged files: 1206
+Total new content: 456,789 bytes
+estimated download size for users on latest manifest: 2,345,678 bytes
+TOP_OFFENDER = GameContent.pak: 500_000_000

@@ -6,6 +6,7 @@ use patchwaste_core::compute_metrics;
 use patchwaste_core::parser::{
     parse_steampipe_log, ParseMode, ParsedBuildOutput, SteamPipeCounters,
 };
+use patchwaste_core::types::ParseDiagnostics;
 
 proptest! {
     #[test]
@@ -29,6 +30,7 @@ proptest! {
             offenders: vec![],
             sources: vec![],
             per_depot: vec![],
+            diagnostics: ParseDiagnostics::default(),
         };
 
         let (metrics, _) = compute_metrics(&parsed);

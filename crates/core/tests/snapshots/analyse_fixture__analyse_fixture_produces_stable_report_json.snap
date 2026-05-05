@@ -1,6 +1,6 @@
 ---
 source: crates/core/tests/analyse_fixture.rs
-assertion_line: 25
+assertion_line: 27
 expression: report
 ---
 {
@@ -53,5 +53,18 @@ expression: report
     }
   ],
   "baseline_comparison": null,
-  "budget": null
+  "budget": null,
+  "diagnostics": {
+    "log_files_found": 1,
+    "lines_scanned": 4,
+    "lines_matched": 3,
+    "counters_found": [
+      "PREDICTED_UPDATE_BYTES",
+      "CHANGED_CONTENT_BYTES"
+    ],
+    "warnings": [],
+    "near_miss_lines": [],
+    "depot_files_found": 0,
+    "depot_files_total_bytes": 0
+  }
 }
