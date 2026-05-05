@@ -83,6 +83,7 @@
   .ln .val { color: var(--fg); font-weight: 700; }
   .ln .red { color: var(--red); }
   .ln .green-bold { color: var(--green); font-weight: 700; }
+  .ln .red-bold { color: var(--red); font-weight: 700; }
   .ln.head .pipe { color: var(--rust-bright); }
   .ln.head { font-weight: 700; }
   .ln .sev-h { color: var(--red); font-weight: 700; }
@@ -183,13 +184,13 @@
     <div class="term-header"><span class="dot"></span><span class="dot"></span><span class="dot"></span> &nbsp; ~/studio/build</div>
     <div class="cmd">
       <span class="prompt">$</span>
-      <span class="typed">patchwaste analyze --input BuildOutput --out report</span>
+      <span class="typed">patchwaste analyse --input BuildOutput --baseline baseline.json --budget-ratio 1.25</span>
     </div>
   </div>
 
   <!-- SCENE 3 output rendering -->
   <div class="scene s3">
-    <div class="out-prompt"><span class="green">$</span> patchwaste analyze --input BuildOutput --out report</div>
+    <div class="out-prompt"><span class="green">$</span> patchwaste analyse --input BuildOutput --baseline baseline.json --budget-ratio 1.25</div>
 
     <span class="ln head">patch<span class="pipe">|</span>waste &nbsp;<span style="color:var(--mute);font-weight:400">steampipe efficiency gate</span></span>
     <span class="ln spacer"></span>
@@ -206,7 +207,7 @@
     <span class="ln path">→ patchwaste-out/report.json</span>
     <span class="ln path">→ patchwaste-out/report.md</span>
     <span class="ln spacer"></span>
-    <span class="ln"><span class="green-bold">PASS</span></span>
+    <span class="ln"><span class="red-bold">budget exceeded · exit 2</span></span>
   </div>
 
   <!-- SCENE 4 findings detail -->
