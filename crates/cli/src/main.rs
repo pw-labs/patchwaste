@@ -4,6 +4,7 @@ use anyhow::Context;
 use clap::{Parser, Subcommand};
 
 use patchwaste_core::config::Config;
+use patchwaste_core::parser;
 use patchwaste_core::report::{BuildMetadata, Report};
 use patchwaste_core::types::Severity;
 use patchwaste_core::{analyse_dir, AnalyseOptions};
@@ -52,6 +53,11 @@ enum Commands {
 
         #[arg(long, default_value = "json")]
         output_format: OutputFormat,
+    },
+    #[command(about = "Check whether patchwaste can parse a BuildOutput directory")]
+    Validate {
+        #[arg(long)]
+        input: PathBuf,
     },
 }
 
@@ -130,6 +136,7 @@ fn main() -> std::process::ExitCode {
                 &output_format,
             )
         }
+        Commands::Validate { input } => run_validate(&input),
     };
 
     match res {
@@ -192,6 +199,20 @@ fn commas(n: u64) -> String {
     result
 }
 
+fn print_diagnostics_warnings(report: &Report) {
+    let s = style();
+    if let Some(diag) = &report.diagnostics {
+        for w in &diag.warnings {
+            eprintln!(
+                "  {yellow}warning:{reset} {}",
+                w,
+                yellow = s.yellow,
+                reset = s.reset,
+            );
+        }
+    }
+}
+
 fn print_report(report: &Report, out: &Path) {
     let s = style();
     let wc = waste_colour(report.metrics.waste_ratio);
@@ -241,6 +262,9 @@ fn print_report(report: &Report, out: &Path) {
     }
 
     eprintln!();
+
+    print_diagnostics_warnings(report);
+
     eprintln!(
         "  {dim}\u{2192} {}{reset}",
         out.join("report.json").display(),
@@ -347,13 +371,11 @@ fn run_analyse(
         std::fs::write(&xml_path, xml).with_context(|| format!("write {}", xml_path.display()))?;
     }
 
-    // Machine-parseable line on stdout
     println!(
         "new_bytes={} changed_content_bytes={} waste_ratio={:.3}",
         report.metrics.new_bytes, report.metrics.changed_content_bytes, report.metrics.waste_ratio
     );
 
-    // Human-readable output on stderr
     print_report(&report, out);
 
     let exit = match &report.budget {
@@ -387,6 +409,148 @@ fn run_analyse(
     eprintln!();
 
     Ok(exit)
+}
+
+fn run_validate(input: &Path) -> anyhow::Result<std::process::ExitCode> {
+    let s = style();
+
+    eprintln!(
+        "\n  {bold}patch{reset}{orange}|{reset}{dim}waste{reset}  {dim}validate{reset}\n",
+        bold = s.bold,
+        orange = s.orange,
+        dim = s.dim,
+        reset = s.reset,
+    );
+
+    if !input.exists() {
+        eprintln!(
+            "  {red}error:{reset} path does not exist: {}",
+            input.display(),
+            red = s.red,
+            reset = s.reset,
+        );
+        return Ok(std::process::ExitCode::from(1));
+    }
+
+    let parsed =
+        parser::parse_buildoutput_dir(input, parser::ParseMode::BestEffort, 50 * 1024 * 1024)?;
+
+    let diag = &parsed.diagnostics;
+
+    eprintln!(
+        "  {dim}log files found       {reset}{bold}{}{reset}",
+        diag.log_files_found,
+        dim = s.dim,
+        bold = s.bold,
+        reset = s.reset,
+    );
+    eprintln!(
+        "  {dim}lines scanned         {reset}{bold}{}{reset}",
+        commas(diag.lines_scanned as u64),
+        dim = s.dim,
+        bold = s.bold,
+        reset = s.reset,
+    );
+    eprintln!(
+        "  {dim}lines matched         {reset}{bold}{}{reset}",
+        commas(diag.lines_matched as u64),
+        dim = s.dim,
+        bold = s.bold,
+        reset = s.reset,
+    );
+
+    if !diag.counters_found.is_empty() {
+        eprintln!(
+            "  {dim}counters found        {reset}{bold}{}{reset}",
+            diag.counters_found.join(", "),
+            dim = s.dim,
+            bold = s.bold,
+            reset = s.reset,
+        );
+    } else {
+        eprintln!(
+            "  {dim}counters found        {reset}{yellow}(none){reset}",
+            dim = s.dim,
+            yellow = s.yellow,
+            reset = s.reset,
+        );
+    }
+
+    eprintln!(
+        "  {dim}top offenders         {reset}{bold}{}{reset}",
+        parsed.offenders.len(),
+        dim = s.dim,
+        bold = s.bold,
+        reset = s.reset,
+    );
+    eprintln!(
+        "  {dim}depot files           {reset}{bold}{} ({} bytes){reset}",
+        diag.depot_files_found,
+        commas(diag.depot_files_total_bytes),
+        dim = s.dim,
+        bold = s.bold,
+        reset = s.reset,
+    );
+    eprintln!();
+
+    if !diag.warnings.is_empty() {
+        for w in &diag.warnings {
+            eprintln!(
+                "  {yellow}warning:{reset} {}",
+                w,
+                yellow = s.yellow,
+                reset = s.reset,
+            );
+        }
+        eprintln!();
+    }
+
+    if !diag.near_miss_lines.is_empty() {
+        eprintln!(
+            "  {dim}Lines that may contain data but did not match:{reset}",
+            dim = s.dim,
+            reset = s.reset,
+        );
+        for l in &diag.near_miss_lines {
+            eprintln!("    {}", l);
+        }
+        eprintln!();
+    }
+
+    let has_counters = parsed.counters.predicted_update_bytes.is_some();
+    if has_counters {
+        eprintln!(
+            "  {green}{bold}READY{reset}  patchwaste can analyse this BuildOutput",
+            green = s.green,
+            bold = s.bold,
+            reset = s.reset,
+        );
+    } else {
+        eprintln!(
+            "  {red}{bold}NOT READY{reset}  no usable counters found",
+            red = s.red,
+            bold = s.bold,
+            reset = s.reset,
+        );
+        eprintln!();
+        eprintln!(
+            "  {dim}Expected at least one of:{reset}",
+            dim = s.dim,
+            reset = s.reset,
+        );
+        eprintln!("    PREDICTED_UPDATE_BYTES=<number>");
+        eprintln!("    predicted update size: <number> bytes");
+        eprintln!("    estimated download size: <number> bytes");
+        eprintln!("    Total bytes written: <number>");
+    }
+
+    eprintln!();
+
+    if has_counters {
+        Ok(std::process::ExitCode::from(0))
+    } else {
+        Ok(std::process::ExitCode::from(1))
+    }
 }
 
 #[cfg(test)]
