@@ -44,3 +44,15 @@ pub struct DepotMetrics {
     pub depot_id: String,
     pub metrics: Metrics,
 }
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct ParseDiagnostics {
+    pub log_files_found: usize,
+    pub lines_scanned: usize,
+    pub lines_matched: usize,
+    pub counters_found: Vec<String>,
+    pub warnings: Vec<String>,
+    pub near_miss_lines: Vec<String>,
+    pub depot_files_found: usize,
+    pub depot_files_total_bytes: u64,
+}

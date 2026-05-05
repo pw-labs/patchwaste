@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use crate::{
     baseline::Baseline,
     parser::ParseMode,
-    types::{ConfidenceLevel, Finding, Metrics, Severity},
+    types::{ConfidenceLevel, Finding, Metrics, ParseDiagnostics, Severity},
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -21,6 +21,8 @@ pub struct Report {
     pub build_metadata: Option<BuildMetadata>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub per_depot: Vec<DepotReport>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diagnostics: Option<ParseDiagnostics>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -106,6 +108,7 @@ impl Report {
             budget,
             build_metadata,
             per_depot: Vec::new(),
+            diagnostics: None,
         }
     }
 
@@ -211,6 +214,34 @@ impl Report {
             }
         }
 
+        if let Some(diag) = &self.diagnostics {
+            if !diag.warnings.is_empty() || !diag.near_miss_lines.is_empty() {
+                s.push_str("## Parse diagnostics\n\n");
+                s.push_str(&format!("- log files found: `{}`\n", diag.log_files_found));
+                s.push_str(&format!("- lines scanned: `{}`\n", diag.lines_scanned));
+                s.push_str(&format!("- lines matched: `{}`\n", diag.lines_matched));
+                if diag.depot_files_found > 0 {
+                    s.push_str(&format!(
+                        "- depot files: `{}` (`{}` bytes)\n",
+                        diag.depot_files_found, diag.depot_files_total_bytes
+                    ));
+                }
+                if !diag.warnings.is_empty() {
+                    s.push_str("\n### Warnings\n\n");
+                    for w in &diag.warnings {
+                        s.push_str(&format!("- {}\n", w));
+                    }
+                }
+                if !diag.near_miss_lines.is_empty() {
+                    s.push_str("\n### Unrecognised lines that may contain data\n\n");
+                    for l in &diag.near_miss_lines {
+                        s.push_str(&format!("- `{}`\n", l));
+                    }
+                }
+                s.push('\n');
+            }
+        }
+
         s
     }
 
@@ -218,7 +249,7 @@ impl Report {
         let mut x = String::new();
         x.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
 
-        let total = self.findings.len() + 1; // +1 for budget gate testcase
+        let total = self.findings.len() + 1;
         let failures: usize = self
             .findings
             .iter()
@@ -253,7 +284,6 @@ impl Report {
             }
         }
 
-        // Budget gate testcase
         x.push_str("  <testcase name=\"budget_gate\" classname=\"patchwaste.budget\"");
         match &self.budget {
             Some(b) if !b.pass => {
@@ -351,6 +381,7 @@ mod tests {
             }),
             build_metadata: None,
             per_depot: Vec::new(),
+            diagnostics: None,
         };
 
         let md = report.to_markdown();
@@ -477,12 +508,13 @@ mod tests {
             }),
             build_metadata: None,
             per_depot: Vec::new(),
+            diagnostics: None,
         };
 
         let xml = report.to_junit_xml();
         assert!(xml.contains("<?xml version=\"1.0\""));
         assert!(xml.contains("tests=\"3\""));
-        assert!(xml.contains("failures=\"2\"")); // HIGH finding + failed budget
+        assert!(xml.contains("failures=\"2\""));
         assert!(xml.contains("HIGH_WASTE_RATIO"));
         assert!(xml.contains("<failure"));
         assert!(xml.contains("LOW_SEV"));
