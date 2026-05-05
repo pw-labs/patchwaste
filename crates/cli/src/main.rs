@@ -12,7 +12,7 @@ use patchwaste_core::{analyse_dir, AnalyseOptions};
 #[command(
     name = "patchwaste",
     version,
-    about = "SteamPipe patch efficiency gate (estimated)"
+    about = "SteamPipe patch efficiency gate"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -21,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    #[command(name = "analyze", visible_alias = "analyse")]
+    #[command(name = "analyse", visible_alias = "analyze")]
     Analyze {
         #[arg(long)]
         input: PathBuf,
