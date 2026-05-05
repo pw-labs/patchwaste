@@ -24,7 +24,7 @@ body:
     attributes:
       label: Command used
       description: Paste the command you ran (redact secrets).
-      placeholder: patchwaste analyze --input ...
+      placeholder: patchwaste analyse --input ...
     validations:
       required: true
 
