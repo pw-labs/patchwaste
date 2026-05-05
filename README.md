@@ -16,6 +16,19 @@
 
 https://github.com/user-attachments/assets/60419e3a-cf40-428e-90c4-82de7c84de56
 
+## Try it on your build
+
+Five second sanity check before you wire patchwaste into CI.
+
+```
+cargo install --git https://github.com/pw-labs/patchwaste patchwaste
+patchwaste validate --input path/to/BuildOutput
+```
+
+No data leaves your machine. patchwaste prints what it recognised, what it could not parse, and which counters it found. If the output looks right, the metrics from `analyse` are honest enough to gate a budget. If it does not, paste the validate output into [a new issue](https://github.com/pw-labs/patchwaste/issues/new) and the parser will be extended to fit your log format.
+
+This is the lowest commitment way to test whether patchwaste fits your pipeline.
+
 ## Why this exists
 
 In 2024, Enshrouded shipped a 299KB content change that triggered a 30.6GB Steam download. Studios have complained about opaque SteamPipe patch sizes for 8+ years with zero tooling to catch it before players do. `patchwaste` fills that gap as a focused CI gate that tells you whether your build wasted bandwidth before you push to production.
