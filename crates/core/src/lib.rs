@@ -14,7 +14,7 @@ use crate::{
     parser::ParseMode,
     report::{BudgetResult, DepotReport, Report},
     rules::run_rules,
-    types::{ConfidenceLevel, Metrics},
+    types::{ConfidenceLevel, Metrics, ParseDiagnostics},
 };
 
 #[derive(Debug, Clone)]
@@ -98,6 +98,7 @@ pub fn analyse_dir(input: &Path, opts: AnalyseOptions) -> anyhow::Result<Report>
                 offenders: d.offenders.clone(),
                 sources: vec![],
                 per_depot: vec![],
+                diagnostics: ParseDiagnostics::default(),
             };
             let (depot_metrics, depot_confidence) = compute_metrics(&depot_parsed);
             DepotReport {
@@ -120,6 +121,7 @@ pub fn analyse_dir(input: &Path, opts: AnalyseOptions) -> anyhow::Result<Report>
     );
     report.inputs.sources = parsed.sources;
     report.per_depot = per_depot;
+    report.diagnostics = Some(parsed.diagnostics);
 
     Ok(report)
 }
@@ -220,6 +222,7 @@ mod tests {
             offenders: vec![],
             sources: vec!["x.log".to_string()],
             per_depot: vec![],
+            diagnostics: ParseDiagnostics::default(),
         };
 
         let (metrics, confidence) = compute_metrics(&parsed);
